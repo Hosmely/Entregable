@@ -1,37 +1,37 @@
 package Entregable;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 import java.util.Scanner;
 
 public class Pedido {
     private String id;
     private String cliente;
     private String estado;
+    private Date fechaDeCreacion;
     private Cliente tipoCliente;
-    private DetallePedido detalles[] = new DetallePedido[100];
-    private static int contadorProductosAgregados = 0;
-    static Pedido[] pedidos = new Pedido[100];
-    private static int contadorPedidos = 0;
+    List<DetallePedido> detalles = new ArrayList<>();
+    List<Pedido> pedidos = new ArrayList<>();
     Producto producto;
     Scanner scan = new Scanner(System.in);
-
-    public static int getContadorPedidos() {
-        return contadorPedidos;
-    }
-
-    public static int getContadorProductosAgregados() {
-        return contadorProductosAgregados;
-    }
-
+    DateFormat formato = new SimpleDateFormat("dd/mm/yyyy");
+    
     public Pedido() {
     }
 
-    public Pedido(String id, String cliente) {
+    public Pedido(String id, String cliente, String fecha)throws ParseException {
         this.id = id;
         this.cliente = cliente;
+        Date fechaR = formato.parse(fecha);
+        this.fechaDeCreacion = fechaR;
         this.estado = "BORRADOR";
     }
 
-    public void CambiarEstado() {
+    public void CambiarEstado()throws PedidoInvalidoException {
         System.out.println("1.BORRADOR\n2.CONFIRMAR\n3.CANCELAR");
         int opcion = scan.nextInt();
         switch (opcion) {
@@ -39,15 +39,15 @@ public class Pedido {
                 System.out.println("El pedido ya esta en borrador");
                 break;
             case 2:
-                if (contadorProductosAgregados == 0) {
-                    System.out.println("No se puede confirmar el pedido, ya que no tiene productos.");
+                if (detalles.isEmpty()) {
+                    throw new PedidoInvalidoException("No se puede confirmar el pedido, ya que no tiene productos.");
                 } else {
                     estado = "CONFIRMADO";
-                    for (int i = 0; i < contadorProductosAgregados; i++) {
-                        int cantidadRestada = detalles[i].getCantidad();
-                        int stock = Producto.buscarProducto(detalles[i].getProducto()).getStock();
+                    for (DetallePedido detalle : detalles) {
+                        int cantidadRestada = detalle.getCantidad();
+                        int stock = producto.buscarProducto(detalle.getProducto()).getStock();
                         int stockActualizado = stock - cantidadRestada;
-                        Producto.buscarProducto(detalles[i].getProducto()).setStock(stockActualizado);
+                        producto.buscarProducto(detalle.getProducto()).setStock(stockActualizado);
                     }
                     System.out.println("El pedido ha sido confirmado");
                 }
@@ -62,24 +62,25 @@ public class Pedido {
         }
     }
 
-    public void AgregarProductosAlPedido(String idProducto, int cantidad, double precioUnitario) {
-        if (contadorProductosAgregados < detalles.length) {
-            if (Producto.buscarProducto(idProducto) != null) {
-                detalles[contadorProductosAgregados++] = new DetallePedido(idProducto, cantidad, precioUnitario);
+    public void AgregarProductosAlPedido(String idProducto, int cantidad, double precioUnitario) throws ProductoNoEncontradoException, StockInsuficienteException{
+       
+            if (producto.buscarProducto(idProducto) == null) 
+                throw new ProductoNoEncontradoException("El producto que se quiere agregar no existe.");
+            else if( producto.buscarProducto(idProducto).getStock()< cantidad)
+                throw new StockInsuficienteException("No hay suficiente stock del prodcuto rquerido.");
+            else{
+                DetallePedido d = new DetallePedido(idProducto, cantidad, precioUnitario);
+                detalles.add(d);
                 System.out.println("Producto agregado al pedido.");
             }
-            else{
-                System.out.println("El producto que se quiere agregar no existe.");
             }
-        } else {
-            System.out.println("Se ha alcanzado la cantidad maxima de productos permitidos en el pedido.");
-        }
-    }
+       
+    
 
     public double CalculaSubtotal() {
         double subtotal = 0;
-        for (int i = 0; i < contadorProductosAgregados; i++) {
-            double totalProducto = detalles[i].getCantidad() * detalles[i].getPrecioUnitario();
+        for (DetallePedido detalle : detalles) {
+            double totalProducto = detalle.getCantidad() * detalle.getPrecioUnitario();
             subtotal += totalProducto;
         }
         return subtotal;
@@ -94,27 +95,29 @@ public class Pedido {
         return CalculaSubtotal() - CalcularDescuento();
     }
 
-    public static void agregarPedido(String id, String cliente) {
-        if (contadorPedidos < pedidos.length) {
-            if (Cliente.BuscarCliente(cliente) != null) {
-                pedidos[contadorPedidos] = new Pedido(id, cliente);
+    public void agregarPedido(String id, String cliente, String fechaDeCreacion)throws ParseException {
+        
+            if (tipoCliente.BuscarCliente(cliente) != null) {
+                Pedido p = new Pedido(id, cliente, fechaDeCreacion);
+                pedidos.add(p);
                 System.out.println("Pedido creado!");
-                contadorPedidos++;
             } else
                 System.out.println("El pedido debe estar asociado a un cliente existente");
 
-        } else {
-            System.out.println("No se pueden agregar mas pedidos.");
-        }
     }
+    @Override
+    public String toString(){
+        String fechaformateada = formato.format(fechaDeCreacion);
+        return String.format("Pedido ID: %s\tCliente: %s\tEstado: %s\tFecha: %s", id, cliente,estado,fechaformateada);
 
-    public static void listarPedidos() {
-        if (contadorPedidos == 0) {
+    }
+    public void listarPedidos() {
+        if (pedidos.isEmpty()) {
             System.out.println("No hay pedidos registrados.");
         } else {
-            for (int i = 0; i < contadorPedidos; i++) {
-                System.out.println("Pedido ID: " + pedidos[i].id + " | Cliente: " + pedidos[i].tipoCliente.getNombre()
-                        + " | Estado: " + pedidos[i].estado);
+
+            for (Pedido pedido : pedidos) {
+                System.out.println(pedido.toString());
             }
         }
     }

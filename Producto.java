@@ -1,12 +1,14 @@
 package Entregable;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Producto {
     private String id;
     private String nombre;
     private double precio;
     private int stock;
-    static Producto productos[] = new Producto[100];
-    private static int contador = 0;
+    List<Producto> productos = new ArrayList<>();
 
     public void setId(String id) {
         this.id = id;
@@ -30,6 +32,20 @@ public class Producto {
             this.stock = stock;
     }
 
+    public Producto(String id, String nombre, double precio, int stock) throws IllegalArgumentException{
+        setId(id);
+        if(nombre.isBlank())
+            throw new IllegalArgumentException("El nombre no puede estar vacio.");
+        else if(nombre.equals(null))
+            throw new IllegalArgumentException("El nombre no puede ser nulo.");
+        else
+            setNombre(nombre);
+        setPrecio(precio);
+        setStock(stock);
+    }
+
+    public Producto(){}
+
     public String getId() {
         return id;
     }
@@ -46,39 +62,35 @@ public class Producto {
         return stock;
     }
 
-    public void AgregarProducto(String id, String nombre, double precio, int stock) {
-        for (int i = 0; i < contador; i++) {
-            if (productos[i].getNombre().equals(nombre) || productos[i].getId().equals(id)) {
+    public void AgregarProducto(String id, String nombre, double precio, int stock) throws IllegalArgumentException{
+        for (Producto producto: productos) {
+            if (producto.getNombre().equalsIgnoreCase(nombre) || producto.getId().equalsIgnoreCase(id)) {
                 System.out.println("Este producto ya existe. El producto no pudo ser agregado.");
                 return; 
             }
         }
-
-        if (contador < productos.length) {
-            productos[contador] = new Producto(); 
-            productos[contador].setId(id);
-            productos[contador].setNombre(nombre);
-            productos[contador].setPrecio(precio);
-            productos[contador].setStock(stock);
-            contador++;
+            Producto p = new Producto(id, nombre, precio, stock);
+            productos.add(p);
             System.out.println("Producto agregado!");
-        } else {
-            System.out.println("Se ha alcanzado la cantidad maxima de productos.");
-        }
+       
     }
 
+    @Override
+    public String toString(){
+        return String.format("ID: %s\tNombre: %s\tPrecio: %s\tStock: %s", getId(), getNombre(), getPrecio(), getStock());
+    }
     
     public void listarProductos() {
         System.out.println("-----Listado de productos:-----");
-        for (int i = 0; i < contador; i++) {
-            System.out.println("ID: " + productos[i].getId() + ", Nombre: " + productos[i].getNombre() + ", Precio: " + productos[i].getPrecio() + ", Stock: " + productos[i].getStock());
+        for (Producto producto : productos) {
+            System.out.println(producto.toString());
         }
     }
 
-    public static Producto buscarProducto(String id) {
-        for (int i = 0; i < contador; i++) {
-            if (productos[i].getId().equals(id) || productos[i].getNombre().equals(id)) {
-                return productos[i];
+    public Producto buscarProducto(String id) {
+        for (Producto producto : productos) {
+            if (producto.getId().equals(id) || producto.getNombre().equals(id)) {
+                return producto;
             }
         }
         return null;

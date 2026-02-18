@@ -1,5 +1,6 @@
 package Entregable;
 
+import java.text.ParseException;
 import java.util.Scanner;
 
 public class Sistema {
@@ -8,10 +9,10 @@ public class Sistema {
         Producto producto = new Producto();
         Cliente cliente = null;
         Pedido pedido = new Pedido();
-
+        Scanner scan = new Scanner(System.in);
 
         do {
-            System.out.println("-----Menu-----");
+            System.out.println("\t-----Menu-----");
             System.out.println("1. Registrar producto  ");
             System.out.println("2. Registrar cliente  ");
             System.out.println("3. Crear pedido");
@@ -22,7 +23,7 @@ public class Sistema {
             System.out.println("8. Cambiar estado de pedido ");
             System.out.println("0. Salir  ");
             System.out.println("Opcion: ");
-            Scanner scan = new Scanner(System.in);
+
             op = scan.nextInt();
             scan.nextLine();
             switch (op) {
@@ -36,7 +37,11 @@ public class Sistema {
                     double precio = scan.nextDouble();
                     System.out.print("Ingrese la cantidad en stock del producto: ");
                     int stock = scan.nextInt();
-                    producto.AgregarProducto(id, nombre, precio, stock);
+                    try {
+                        producto.AgregarProducto(id, nombre, precio, stock);
+                    } catch (IllegalArgumentException iae) {
+                        System.out.println(iae.getMessage());
+                    }
 
                     break;
                 case 2:
@@ -44,45 +49,62 @@ public class Sistema {
                     System.out.println("2. Cliente VIP");
                     System.out.print("Seleccione : ");
                     int tipoCliente = scan.nextInt();
-                    scan.nextLine();  
+                    scan.nextLine();
                     System.out.print("Ingrese el id del cliente: ");
                     String idCliente = scan.nextLine();
                     System.out.print("Ingrese el nombre del cliente: ");
                     String nombreCliente = scan.nextLine();
 
-                     if (tipoCliente == 1) {
-                        cliente = new ClienteRegular(idCliente, nombreCliente);
-                        System.out.println("Cliente Regular registrado.");
+                    if (tipoCliente == 1) {
+
+                        try {
+                            ClienteRegular cl1 = new ClienteRegular();
+                            cl1.AgregarCliente(idCliente, nombreCliente);
+                        } catch (IllegalArgumentException iae) {
+                            System.out.println(iae.getMessage());
+                        }
                     } else if (tipoCliente == 2) {
-                        cliente = new ClienteVIP(idCliente, nombreCliente);
-                        System.out.println("Cliente VIP registrado.");
+                        try {
+                            ClienteVIP cl2 = new ClienteVIP();
+                            cl2.AgregarCliente(idCliente, nombreCliente);
+                        } catch (IllegalArgumentException iae) {
+                            System.out.println(iae.getMessage());
+                        }
+
                     } else {
                         System.out.println("Opción no válida.");
                     }
                     break;
 
                 case 3:
-                    if (cliente != null) {
                         System.out.print("Ingrese el id del pedido: ");
                         String idPedido = scan.nextLine();
                         System.out.print("Ingrese el id del cliente: ");
                         idCliente = scan.nextLine();
-                        Pedido.agregarPedido(idPedido, idCliente);;
+                        System.out.print("Ingrese la fecha de creacion: ");
+                        String fecha = scan.nextLine();
+                        try {
+                            pedido.agregarPedido(idPedido, idCliente, fecha);
+                        } catch (ParseException pe) {
+                            System.out.print(pe.getMessage());
+                        }
                         System.out.println("Pedido creado.");
-                    } else {
-                        System.out.println("Primero debe registrar un cliente.");
-                    }
+                   
                     break;
 
                 case 4:
-                    if (Pedido.getContadorPedidos() == 0) {
-                        System.out.print("Ingrese el id del producto: ");
+                    if (!pedido.pedidos.isEmpty()) {
+                        System.out.print("Ingrese el id o nombre del producto: ");
                         String idProductoPedido = scan.nextLine();
-                        Producto productoPedido = Producto.buscarProducto(idProductoPedido);
+                        Producto productoPedido = producto.buscarProducto(idProductoPedido);
                         if (productoPedido != null) {
                             System.out.print("Ingrese la cantidad del producto: ");
                             int cantidad = scan.nextInt();
-                            pedido.AgregarProductosAlPedido(idProductoPedido, cantidad, productoPedido.getPrecio());
+                            try {
+                                pedido.AgregarProductosAlPedido(idProductoPedido, cantidad, productoPedido.getPrecio());
+                            } catch (ProductoNoEncontradoException | StockInsuficienteException e) {
+                                System.out.println(e.getMessage());
+                            }
                         } else {
                             System.out.println("Producto no encontrado.");
                         }
@@ -92,7 +114,7 @@ public class Sistema {
                     break;
 
                 case 5:
-                    if (Pedido.getContadorPedidos() != 0) {
+                    if (!pedido.pedidos.isEmpty()) {
                         System.out.println("Subtotal: " + pedido.CalculaSubtotal());
                         System.out.println("Descuento: " + pedido.CalcularDescuento());
                         System.out.println("Total final: " + pedido.CalcularTotalFinal());
@@ -106,14 +128,21 @@ public class Sistema {
                     break;
 
                 case 7:
-                    Pedido.listarPedidos();
+                    pedido.listarPedidos();
                     break;
 
                 case 8:
-                    pedido.CambiarEstado();
+                    
+                    try {
+                        pedido.CambiarEstado();
+                    } catch (PedidoInvalidoException pie) {
+                       System.out.println(pie.getMessage());
+                    }
                 default:
                     break;
             }
         } while (op != 0);
+        scan.close();
     }
+
 }

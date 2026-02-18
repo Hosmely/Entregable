@@ -7,6 +7,7 @@ public class ClienteRegular extends Cliente {
         super(id, nombre);
     }
 
+    public ClienteRegular(){}
   
 }
 

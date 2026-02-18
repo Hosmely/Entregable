@@ -6,6 +6,7 @@ public class ClienteVIP extends Cliente {
         super(id, nombre);
     }
    
+    public ClienteVIP(){}
 
     @Override
     public  double CalcularDescuento(double subtotal){
