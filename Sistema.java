@@ -7,12 +7,17 @@ public class Sistema {
     public static void main(String[] args) {
         int op;
         Producto producto = new Producto();
-        Cliente cliente = null;
         Pedido pedido = new Pedido();
+        Thread hiloProcesador = new Thread(new HiloProcesador(pedido.getPedidos()));
+        hiloProcesador.start();
+        Thread hiloReporte = new Thread(new HiloGeneradorDeReportes());
+        hiloReporte.setDaemon(true);
+        hiloReporte.start(); 
         Scanner scan = new Scanner(System.in);
 
+        
         do {
-            System.out.println("\t-----Menu-----");
+            System.out.println("\n\t-----Menu-----");
             System.out.println("1. Registrar producto  ");
             System.out.println("2. Registrar cliente  ");
             System.out.println("3. Crear pedido");
@@ -25,6 +30,7 @@ public class Sistema {
             System.out.println("Opcion: ");
 
             op = scan.nextInt();
+
             scan.nextLine();
             switch (op) {
                 case 1:
@@ -40,7 +46,7 @@ public class Sistema {
                     try {
                         producto.AgregarProducto(id, nombre, precio, stock);
                     } catch (IllegalArgumentException iae) {
-                        System.out.println(iae.getMessage());
+                        System.out.println("El pedido no pudo ser agregado.");
                     }
 
                     break;
@@ -50,58 +56,70 @@ public class Sistema {
                     System.out.print("Seleccione : ");
                     int tipoCliente = scan.nextInt();
                     scan.nextLine();
-                    System.out.print("Ingrese el id del cliente: ");
-                    String idCliente = scan.nextLine();
-                    System.out.print("Ingrese el nombre del cliente: ");
-                    String nombreCliente = scan.nextLine();
+                    String idCliente;
+                    String nombreCliente;
+                    switch (tipoCliente) {
+                        case 1:
+                            try {
+                                System.out.print("Ingrese el id del cliente: ");
+                                idCliente = scan.nextLine();
+                                System.out.print("Ingrese el nombre del cliente: ");
+                                nombreCliente = scan.nextLine();
+                                ClienteRegular cl1 = new ClienteRegular();
+                                cl1.AgregarCliente(idCliente, nombreCliente);
+                            } catch (IllegalArgumentException iae) {
+                                System.out.println(iae.getMessage());
+                            }
+                            break;
 
-                    if (tipoCliente == 1) {
+                        case 2:
+                            try {
+                                System.out.print("Ingrese el id del cliente: ");
+                                idCliente = scan.nextLine();
+                                System.out.print("Ingrese el nombre del cliente: ");
+                                nombreCliente = scan.nextLine();
+                                ClienteVIP cl2 = new ClienteVIP();
+                                cl2.AgregarCliente(idCliente, nombreCliente);
+                            } catch (IllegalArgumentException iae) {
+                                System.out.println(iae.getMessage());
+                            }
+                            break;
 
-                        try {
-                            ClienteRegular cl1 = new ClienteRegular();
-                            cl1.AgregarCliente(idCliente, nombreCliente);
-                        } catch (IllegalArgumentException iae) {
-                            System.out.println(iae.getMessage());
-                        }
-                    } else if (tipoCliente == 2) {
-                        try {
-                            ClienteVIP cl2 = new ClienteVIP();
-                            cl2.AgregarCliente(idCliente, nombreCliente);
-                        } catch (IllegalArgumentException iae) {
-                            System.out.println(iae.getMessage());
-                        }
-
-                    } else {
-                        System.out.println("Opción no válida.");
+                        default:
+                            System.out.println("Opción no válida.");
                     }
                     break;
 
                 case 3:
-                        System.out.print("Ingrese el id del pedido: ");
-                        String idPedido = scan.nextLine();
-                        System.out.print("Ingrese el id del cliente: ");
-                        idCliente = scan.nextLine();
-                        System.out.print("Ingrese la fecha de creacion: ");
-                        String fecha = scan.nextLine();
-                        try {
-                            pedido.agregarPedido(idPedido, idCliente, fecha);
-                        } catch (ParseException pe) {
-                            System.out.print(pe.getMessage());
-                        }
-                        System.out.println("Pedido creado.");
-                   
+                    System.out.print("Ingrese el id del pedido: ");
+                    String idPedido = scan.nextLine();
+                    System.out.print("Ingrese el id del cliente: ");
+                    idCliente = scan.nextLine();
+                    System.out.print("Ingrese la fecha de creacion: ");
+                  String fecha = scan.nextLine();
+                    try {
+                        pedido.agregarPedido(idPedido, idCliente, fecha);
+                    } catch (ParseException pe) {
+                        System.out.print(pe.getMessage());
+                    }
+
                     break;
 
                 case 4:
                     if (!pedido.pedidos.isEmpty()) {
                         System.out.print("Ingrese el id o nombre del producto: ");
                         String idProductoPedido = scan.nextLine();
-                        Producto productoPedido = producto.buscarProducto(idProductoPedido);
+                        Producto productoPedido = null;
+                        try {
+                            productoPedido = producto.buscarProducto(idProductoPedido);
+                        } catch (ProductoNoEncontradoException e) {
+                            System.out.println(e.getMessage());
+                        }
                         if (productoPedido != null) {
                             System.out.print("Ingrese la cantidad del producto: ");
                             int cantidad = scan.nextInt();
                             try {
-                                pedido.AgregarProductosAlPedido(idProductoPedido, cantidad, productoPedido.getPrecio());
+                                pedido.AgregarProductosAlPedido(productoPedido, cantidad, productoPedido.getPrecio());
                             } catch (ProductoNoEncontradoException | StockInsuficienteException e) {
                                 System.out.println(e.getMessage());
                             }
@@ -132,11 +150,11 @@ public class Sistema {
                     break;
 
                 case 8:
-                    
+
                     try {
                         pedido.CambiarEstado();
                     } catch (PedidoInvalidoException pie) {
-                       System.out.println(pie.getMessage());
+                        System.out.println(pie.getMessage());
                     }
                 default:
                     break;

@@ -32,6 +32,10 @@ public class Producto {
             this.stock = stock;
     }
 
+    public List<Producto> getProductos() {
+        return productos;
+    }
+
     public Producto(String id, String nombre, double precio, int stock) throws IllegalArgumentException{
         setId(id);
         if(nombre.isBlank())
@@ -69,8 +73,7 @@ public class Producto {
                 return; 
             }
         }
-            Producto p = new Producto(id, nombre, precio, stock);
-            productos.add(p);
+            productos.add(new Producto(id, nombre, precio, stock));
             System.out.println("Producto agregado!");
        
     }
@@ -87,13 +90,14 @@ public class Producto {
         }
     }
 
-    public Producto buscarProducto(String id) {
+    public Producto buscarProducto(String id) throws ProductoNoEncontradoException{ 
         for (Producto producto : productos) {
             if (producto.getId().equals(id) || producto.getNombre().equals(id)) {
                 return producto;
             }
         }
-        return null;
+        throw new ProductoNoEncontradoException("El producto que se quiere agregar no existe.");
+        
     }
     }
 

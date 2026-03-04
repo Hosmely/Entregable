@@ -13,10 +13,10 @@ public class Pedido {
     private String cliente;
     private String estado;
     private Date fechaDeCreacion;
-    private Cliente tipoCliente;
+    private Cliente tipoCliente = null;
     List<DetallePedido> detalles = new ArrayList<>();
     List<Pedido> pedidos = new ArrayList<>();
-    Producto producto;
+    Producto producto = new Producto();
     Scanner scan = new Scanner(System.in);
     DateFormat formato = new SimpleDateFormat("dd/mm/yyyy");
     
@@ -29,6 +29,18 @@ public class Pedido {
         Date fechaR = formato.parse(fecha);
         this.fechaDeCreacion = fechaR;
         this.estado = "BORRADOR";
+    }
+
+    public String getEstado() {
+        return estado;
+    }
+
+    public void setEstado(String estado) {
+        this.estado = estado;
+    }
+
+    public synchronized List<Pedido> getPedidos() {
+        return pedidos;
     }
 
     public void CambiarEstado()throws PedidoInvalidoException {
@@ -45,15 +57,16 @@ public class Pedido {
                     estado = "CONFIRMADO";
                     for (DetallePedido detalle : detalles) {
                         int cantidadRestada = detalle.getCantidad();
-                        int stock = producto.buscarProducto(detalle.getProducto()).getStock();
+                        int stock = producto.getStock();
                         int stockActualizado = stock - cantidadRestada;
-                        producto.buscarProducto(detalle.getProducto()).setStock(stockActualizado);
+                        producto.setStock(stockActualizado);
                     }
                     System.out.println("El pedido ha sido confirmado");
                 }
                 break;
             case 3:
                 estado = "CANCELADO";
+                pedidos.removeLast();
                 System.out.println("El pedido ha sido cancelado");
                 break;
             default:
@@ -62,15 +75,13 @@ public class Pedido {
         }
     }
 
-    public void AgregarProductosAlPedido(String idProducto, int cantidad, double precioUnitario) throws ProductoNoEncontradoException, StockInsuficienteException{
+    public void AgregarProductosAlPedido(Producto producto, int cantidad, double precioUnitario) throws ProductoNoEncontradoException, StockInsuficienteException{
        
-            if (producto.buscarProducto(idProducto) == null) 
-                throw new ProductoNoEncontradoException("El producto que se quiere agregar no existe.");
-            else if( producto.buscarProducto(idProducto).getStock()< cantidad)
-                throw new StockInsuficienteException("No hay suficiente stock del prodcuto rquerido.");
+            if( producto.getStock()< cantidad)
+                throw new StockInsuficienteException("No hay suficiente stock del producto requerido.");
             else{
-                DetallePedido d = new DetallePedido(idProducto, cantidad, precioUnitario);
-                detalles.add(d);
+//
+                detalles.add(new DetallePedido(producto.getNombre(), cantidad, precioUnitario));
                 System.out.println("Producto agregado al pedido.");
             }
             }
@@ -97,7 +108,7 @@ public class Pedido {
 
     public void agregarPedido(String id, String cliente, String fechaDeCreacion)throws ParseException {
         
-            if (tipoCliente.BuscarCliente(cliente) != null) {
+            if (Cliente.BuscarCliente(cliente) != null) { 
                 Pedido p = new Pedido(id, cliente, fechaDeCreacion);
                 pedidos.add(p);
                 System.out.println("Pedido creado!");
